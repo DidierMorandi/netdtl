@@ -17,7 +17,7 @@ $serverIP = $_SERVER['SERVER_ADDR'] ?? gethostbyname(gethostname());
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_machine'])) {
     $hostname = trim($_POST['hostname'] ?? '');
     $ip       = trim($_POST['ip'] ?? '');
-    $os       = trim($_POST['os'] ?? '');
+    $os       = normalizeOsLabel(trim($_POST['os'] ?? '')) ?? '';
     $comment  = trim($_POST['comment'] ?? '');
 
     if (!$hostname || !filter_var($ip, FILTER_VALIDATE_IP)) {
@@ -83,6 +83,7 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
     echo "\xEF\xBB\xBF";
     echo '"Hostname","IP","MAC","Fabricant","Port switch","Brassage","OS","Statut","Ports ouverts","Ping (ms)","Dernière vue","Commentaire"' . "\r\n";
     foreach ($machines as $m) {
+        $m['os'] = normalizeOsLabel($m['os']) ?? '';
         echo implode(',', array_map(fn($v) => '"' . str_replace('"','""',$v??'') . '"', $m)) . "\r\n";
     }
     exit;
@@ -188,7 +189,7 @@ $upCount = (int)$pdo->query("SELECT COUNT(*) FROM machines WHERE status='up'")->
                     <td class="muted small"><?= htmlspecialchars($m['vendor'] ?? '—') ?></td>
                     <td class="mono small" style="color:var(--accent2)"><?= htmlspecialchars($m['switch_port'] ?? '—') ?></td>
                     <td class="mono small" style="color:var(--purple)"><?= htmlspecialchars($m['patch_port'] ?? '—') ?></td>
-                    <td class="muted small"><?= htmlspecialchars($m['os'] ?? '—') ?></td>
+                    <td class="muted small"><?= htmlspecialchars(normalizeOsLabel($m['os'] ?? '') ?? '—') ?></td>
                     <td class="muted small"><?= htmlspecialchars($m['comment'] ?? '—') ?></td>
                     <td>
                         <div style="display:flex;gap:6px">

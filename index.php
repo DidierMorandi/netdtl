@@ -82,7 +82,7 @@ $recentDiag = $pdo->query("SELECT * FROM diag_history ORDER BY id DESC LIMIT 5")
                 ?></td>
                 <td><a href="machine.php?id=<?= $m['id'] ?>" class="link"><?= htmlspecialchars($m['hostname']) ?></a></td>
                 <td class="mono"><?= htmlspecialchars($m['ip']) ?></td>
-                <td class="muted"><?= htmlspecialchars($m['os'] ?? '—') ?></td>
+                <td class="muted"><?= htmlspecialchars(normalizeOsLabel($m['os'] ?? '') ?? '—') ?></td>
                 <td class="muted small"><?= timeAgo($m['last_seen']) ?></td>
                 <td class="mono small"><?= $m['last_ping_ms'] !== null ? $m['last_ping_ms'] . ' ms' : '—' ?></td>
             </tr>

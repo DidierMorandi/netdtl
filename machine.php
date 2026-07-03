@@ -19,7 +19,7 @@ $diagLines = []; $diagAction = '';
 
 // ─── Mise à jour commentaire / OS ───────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
-    $os          = trim($_POST['os'] ?? '');
+    $os          = normalizeOsLabel(trim($_POST['os'] ?? '')) ?? '';
     $switch_port = trim($_POST['switch_port'] ?? '');
     $patch_port  = trim($_POST['patch_port']  ?? '');
     $comment     = trim($_POST['comment'] ?? '');
@@ -65,8 +65,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['diag'])) {
             // Tente d'extraire l'OS
             foreach ($diagLines as $l) {
                 if (preg_match('/OS details:\s+(.+)/i', $l, $om)) {
-                    $pdo->prepare("UPDATE machines SET os=? WHERE id=?")->execute([trim($om[1]), $id]);
-                    $m['os'] = trim($om[1]);
+                    $detectedOs = normalizeOsLabel(trim($om[1]));
+                    $pdo->prepare("UPDATE machines SET os=? WHERE id=?")->execute([$detectedOs, $id]);
+                    $m['os'] = $detectedOs;
                 }
             }
             break;
@@ -177,7 +178,7 @@ $statusLbl = $m['status']==='up'?'En ligne':($m['status']==='down'?'Hors ligne':
             <form method="post" style="display:flex;flex-direction:column;gap:12px">
                 <div class="form-group">
                     <label class="form-label">Système d'exploitation</label>
-                    <input type="text" name="os" class="form-input" value="<?= htmlspecialchars($m['os'] ?? '') ?>" placeholder="Windows 11 Pro">
+                    <input type="text" name="os" class="form-input" value="<?= htmlspecialchars(normalizeOsLabel($m['os'] ?? '') ?? '') ?>" placeholder="Windows 11 Pro">
                 </div>
                 <div class="form-group">
                     <label class="form-label">Port switch</label>

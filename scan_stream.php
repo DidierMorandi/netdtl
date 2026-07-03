@@ -26,9 +26,10 @@ set_time_limit(600);
 if (ob_get_level()) ob_end_flush();
 
 function getWmiDescription(string $ip): ?string {
+    $psIp = str_replace("'", "''", $ip);
     // Récupère la description Windows via PowerShell/WMI
     $cmd = 'powershell -NonInteractive -Command "'
-        . '(Get-WmiObject -ComputerName '' . $ip . '' -Class Win32_OperatingSystem'
+        . '(Get-WmiObject -ComputerName \'' . $psIp . '\' -Class Win32_OperatingSystem'
         . ' -ErrorAction SilentlyContinue).Description'
         . '"';
     $result = shell_exec($cmd . ' 2>&1');
@@ -152,7 +153,7 @@ while (!feof($handle)) {
 
     // OS
     if ($currentHost && preg_match('/OS details:\s+(.+)/i', $line, $m)) {
-        $currentOS = trim($m[1]);
+        $currentOS = normalizeOsLabel(trim($m[1]));
         sse(['type' => 'os', 'ip' => $currentHost['ip'], 'os' => $currentOS]);
     }
 }
@@ -275,7 +276,7 @@ function saveMachineStream(PDO $pdo, array $host, ?string $mac, ?string $os, ?in
         ':hostname'   => $host['hostname'],
         ':ip'         => $host['ip'],
         ':mac'        => $mac,
-        ':os'         => $os,
+        ':os'         => normalizeOsLabel($os),
         ':status'     => $status,
         ':open_ports' => $openPorts,
         ':ping_ms'    => $pingMs,

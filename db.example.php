@@ -123,6 +123,47 @@ function isValidTarget(string $t): bool {
     return false;
 }
 
+function windowsFeatureReleaseFromBuild(int $build): ?string {
+    if ($build >= 26200 && $build < 27000) return '25H2';
+    if ($build >= 26100 && $build < 26200) return '24H2';
+    if ($build >= 22631 && $build < 26100) return '23H2';
+    if ($build >= 22621 && $build < 22631) return '22H2';
+    return null;
+}
+
+function normalizeOsLabel(?string $os): ?string {
+    if ($os === null) return null;
+
+    $label = trim(preg_replace('/\s+/', ' ', $os));
+    if ($label === '') return null;
+
+    if (stripos($label, 'windows') === false) return $label;
+
+    $base = 'Windows';
+    if (preg_match('/\bWindows\s+(11|10)\b/i', $label, $m)) {
+        $base = 'Windows ' . $m[1];
+    } elseif (preg_match('/\bWindows\s+Server\s+(\d{4})\b/i', $label, $m)) {
+        $base = 'Windows Server ' . $m[1];
+    }
+
+    if (preg_match('/\bbuild\s+(\d{5})\b/i', $label, $m)) {
+        $build = (int)$m[1];
+        $release = windowsFeatureReleaseFromBuild($build);
+        if ($release) {
+            if ($base === 'Windows' && $build >= 22000) $base = 'Windows 11';
+            if ($base === 'Windows' && $build >= 10240) $base = 'Windows 10';
+            return $base . ' ' . $release . ' (build ' . $build . ')';
+        }
+    }
+
+    if (preg_match('/\b2\dH[12]\s*(?:-|\/|ou|or)\s*2\dH[12]\b/i', $label)) {
+        if ($base === 'Windows' && preg_match('/\b2[45]H2\b/i', $label)) $base = 'Windows 11';
+        return $base . ' (version a confirmer)';
+    }
+
+    return preg_replace('/^Microsoft\s+/i', '', $label);
+}
+
 function runCommand(string $cmd): array {
     $output = shell_exec($cmd . ' 2>&1');
     if (!$output) return [];
